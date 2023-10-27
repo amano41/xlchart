@@ -49,6 +49,10 @@ def parse_chart(chart, name: Optional[str] = None) -> dict:
     for axis in chart.Axes():
         data["axis"].append(parse_axis(axis, chart.ChartType))
 
+    # 箱ひげ図では系列のデータが取得できない
+    if is_boxwhisker_chart(chart.ChartType):
+        return data
+
     series = list()
     for i, group in enumerate(chart.ChartGroups()):
         series.extend(parse_series_by_group(group, i + 1))
@@ -66,38 +70,90 @@ def parse_axis(axis, chart_type: str):
 
     if axis.HasTitle:
         data["title"] = axis.AxisTitle.Caption
-        data["title-orientation"] = axis.AxisTitle.Orientation
+        if not is_boxwhisker_chart(chart_type):
+            data["title-orientation"] = axis.AxisTitle.Orientation
 
+    # レーダーチャート
+    # 軸のオプションが利用できない
+    if is_radar_chart(chart_type):
+        parse_axis_scale(data, axis, chart_type)
+        parse_axis_unit(data, axis, chart_type)
+        parse_axis_category_names(data, axis, chart_type)
+        parse_axis_tick_label_spacing(data, axis, chart_type)
+        parse_axis_tick_label_format(data, axis, chart_type)
+
+    # 散布図
+    # 項目軸のオプションが利用できない
+    # X 軸の AxisType は xlCategory だが数値軸として扱う
+    elif is_scatter_chart(chart_type):
+        parse_axis_scale(data, axis, chart_type)
+        parse_axis_unit(data, axis, chart_type)
+        parse_axis_tick_label_format(data, axis, chart_type)
+        parse_axis_crosses(data, axis, chart_type)
+        parse_axis_reverse(data, axis, chart_type)
+
+    # 箱ひげ図
+    # 数値軸の目盛が利用できない
+    elif is_boxwhisker_chart(chart_type):
+        parse_axis_scale(data, axis, chart_type)
+        parse_axis_tick_label_format(data, axis, chart_type)
+
+    # その他
+    else:
+        parse_axis_scale(data, axis, chart_type)
+        parse_axis_unit(data, axis, chart_type)
+        parse_axis_category_names(data, axis, chart_type)
+        parse_axis_tick_label_spacing(data, axis, chart_type)
+        parse_axis_tick_label_format(data, axis, chart_type)
+        parse_axis_crosses(data, axis, chart_type)
+        parse_axis_reverse(data, axis, chart_type)
+
+    return data
+
+
+def parse_axis_scale(data, axis, chart_type: str):
     # 散布図の X 軸は数値軸だが Type は xlCategory になっている
     if is_value_axis(axis) or is_scatter_chart(chart_type):
         data["min-scale"] = axis.MinimumScale
         data["min-scale-auto"] = axis.MinimumScaleIsAuto
         data["max-scale"] = axis.MaximumScale
         data["max-scale-auto"] = axis.MaximumScaleIsAuto
+
+
+def parse_axis_unit(data, axis, chart_type: str):
+    # 散布図の X 軸は数値軸だが Type は xlCategory になっている
+    if is_value_axis(axis) or is_scatter_chart(chart_type):
         data["major-unit"] = axis.MajorUnit
         data["major-unit-auto"] = axis.MajorUnitIsAuto
         data["minor-unit"] = axis.MinorUnit
         data["minor-unit-auto"] = axis.MinorUnitIsAuto
-    else:
-        if is_category_axis(axis):
-            data["category-names"] = axis.CategoryNames
+
+
+def parse_axis_category_names(data, axis, chart_type: str):
+    if is_category_axis(axis):
+        data["category-names"] = axis.CategoryNames
+
+
+def parse_axis_tick_label_spacing(data, axis, chart_type: str):
+    if is_category_axis(axis) or is_series_axis(axis):
         data["tick-label-spacing"] = axis.TickLabelSpacing
         data["tick-label-spacing-auto"] = axis.TickLabelSpacingIsAuto
 
-    data["tick-label-format"] = axis.TickLabels.NumberFormatLocal
 
-    # レーダーチャートでは軸のオプションは利用できない
-    if is_radar_chart(chart_type):
-        return data
+def parse_axis_tick_label_format(data, axis, chart_type: str):
+    # 散布図の X 軸は数値軸だが Type は xlCategory になっている
+    if is_value_axis(axis) or is_scatter_chart(chart_type):
+        data["tick-label-format"] = axis.TickLabels.NumberFormatLocal
 
-    # 系列軸では軸の交点を指定できない
+
+def parse_axis_crosses(data, axis, chart_type: str):
     if not is_series_axis(axis):
         data["crosses"] = axis.Crosses
         data["crosses-at"] = axis.CrossesAt
 
-    data["reverse"] = axis.ReversePlotOrder
 
-    return data
+def parse_axis_reverse(data, axis, chart_type: str):
+    data["reverse"] = axis.ReversePlotOrder
 
 
 def parse_series_by_group(group, group_number: int = 1):
@@ -163,6 +219,10 @@ def is_scatter_chart(chart_type: str) -> bool:
         constants.xlXYScatterSmoothNoMarkers,
         # fmt: on
     )
+
+
+def is_boxwhisker_chart(chart_type: str) -> bool:
+    return chart_type == constants.xlBoxwhisker
 
 
 def is_radar_chart(chart_type: str) -> bool:
