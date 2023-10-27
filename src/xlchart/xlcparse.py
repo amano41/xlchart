@@ -47,7 +47,7 @@ def parse_chart(chart, name: Optional[str] = None) -> dict:
 
     data["axis"] = list()
     for axis in chart.Axes():
-        data["axis"].append(parse_axis(axis, chart.Type))
+        data["axis"].append(parse_axis(axis, chart.ChartType))
 
     series = list()
     for i, group in enumerate(chart.ChartGroups()):
@@ -132,7 +132,7 @@ def parse_series(series):
 
     data["index"] = int(index) - 1
     data["name"] = series.Name
-    data["type"] = series.ChartType
+    data["chart-type"] = series.ChartType
 
     data["formula"] = series.Formula
     data["data-range-name"] = s_name
