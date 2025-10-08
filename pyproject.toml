@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "xlchart"
-version = "0.2.0"
+version = "0.3.0"
 description = "Excel chart checker"
 authors = ["Yoichi Amano <amano.yoichi@gmail.com>"]
 readme = "README.md"
