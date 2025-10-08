@@ -94,7 +94,7 @@ def parse_axis(axis, chart_type: str):
         parse_axis_unit(data, axis, chart_type)
         parse_axis_tick_label_format(data, axis, chart_type)
         parse_axis_crosses(data, axis, chart_type)
-        parse_axis_reverse(data, axis, chart_type)
+        parse_axis_display(data, axis, chart_type)
 
     # 箱ひげ図
     # 数値軸の目盛が利用できない
@@ -116,7 +116,7 @@ def parse_axis(axis, chart_type: str):
         parse_axis_tick_label_spacing(data, axis, chart_type)
         parse_axis_tick_label_format(data, axis, chart_type)
         parse_axis_crosses(data, axis, chart_type)
-        parse_axis_reverse(data, axis, chart_type)
+        parse_axis_display(data, axis, chart_type)
 
     return data
 
@@ -162,7 +162,12 @@ def parse_axis_crosses(data, axis, chart_type: str):
         data["crosses-at"] = axis.CrossesAt
 
 
-def parse_axis_reverse(data, axis, chart_type: str):
+def parse_axis_display(data, axis, chart_type: str):
+    # 散布図の X 軸は数値軸だが Type は xlCategory になっている
+    if is_value_axis(axis) or is_scatter_chart(chart_type):
+        if axis.HasDisplayUnitLabel:
+            data["display-unit"] = axis.DisplayUnit
+        data["logarithmic"] = axis.ScaleType == constants.xlScaleLogarithmic
     data["reverse"] = axis.ReversePlotOrder
 
 
