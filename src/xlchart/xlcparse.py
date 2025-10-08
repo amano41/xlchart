@@ -219,6 +219,11 @@ def parse_series(series):
         data["data-labels-marker"] = labels.ShowLegendKey
         data["leader-lines"] = series.HasLeaderLines
 
+    for trendline in series.Trendlines():
+        data["trendline-type"] = trendline.Type
+        data["display-equation"] = trendline.DisplayEquation
+        data["display-r-squared"] = trendline.DisplayRSquared
+
     data["axis-group"] = series.AxisGroup
 
     return data
