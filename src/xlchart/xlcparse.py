@@ -219,6 +219,10 @@ def parse_series(series):
         data["data-labels-marker"] = labels.ShowLegendKey
         data["leader-lines"] = series.HasLeaderLines
 
+    if series.HasErrorBars:
+        error_bars = series.ErrorBars
+        data["error-bars-end-style"] = error_bars.EndStyle
+
     for trendline in series.Trendlines():
         data["trendline-type"] = trendline.Type
         data["display-equation"] = trendline.DisplayEquation
