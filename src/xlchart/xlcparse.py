@@ -226,10 +226,18 @@ def parse_series(series):
         error_bars = series.ErrorBars
         data["error-bars-end-style"] = error_bars.EndStyle
 
-    for trendline in series.Trendlines():
-        data["trendline-type"] = trendline.Type
-        data["display-equation"] = trendline.DisplayEquation
-        data["display-r-squared"] = trendline.DisplayRSquared
+    if series.Trendlines().Count > 0:
+        data["trendline"] = list()
+        for trendline in series.Trendlines():
+            d = dict()
+            d["trendline-type"] = trendline.Type
+            d["intercept"] = trendline.Intercept
+            d["intercept-auto"] = trendline.InterceptIsAuto
+            d["display-equation"] = trendline.DisplayEquation
+            d["display-r-squared"] = trendline.DisplayRSquared
+            if trendline.DisplayEquation or trendline.DisplayRSquared:
+                d["equation"] = trendline.DataLabel.Text
+            data["trendline"].append(d)
 
     data["axis-group"] = series.AxisGroup
 
