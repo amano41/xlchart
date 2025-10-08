@@ -55,6 +55,9 @@ def parse_chart(chart, name: Optional[str] = None) -> dict:
 
     # ヒストグラムでは系列のデータが取得できない
     if is_histogram_chart(chart.ChartType):
+        data["bin"] = list()
+        for i, group in enumerate(chart.ChartGroups()):
+            data["bin"].append(parse_bin_by_group(group, i + 1))
         return data
 
     series = list()
@@ -229,6 +232,22 @@ def parse_series(series):
         data["display-r-squared"] = trendline.DisplayRSquared
 
     data["axis-group"] = series.AxisGroup
+
+    return data
+
+
+def parse_bin_by_group(group, group_number: int = 1):
+
+    data = dict()
+
+    data["bin-type"] = group.BinsType
+    data["bin-count"] = group.BinsCountValue
+    data["bin-width"] = group.BinWidthValue
+    data["bin-overflow-enabled"] = group.BinsOverflowEnabled
+    data["bin-overflow"] = group.BinsOverflowValue
+    data["bin-underflow-enabled"] = group.BinsUnderflowEnabled
+    data["bin-underflow"] = group.BinsUnderflowValue
+    data["chart-group"] = group_number
 
     return data
 
