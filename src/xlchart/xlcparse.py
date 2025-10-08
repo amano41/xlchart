@@ -53,6 +53,10 @@ def parse_chart(chart, name: Optional[str] = None) -> dict:
     if is_boxwhisker_chart(chart.ChartType):
         return data
 
+    # ヒストグラムでは系列のデータが取得できない
+    if is_histogram_chart(chart.ChartType):
+        return data
+
     series = list()
     for i, group in enumerate(chart.ChartGroups()):
         series.extend(parse_series_by_group(group, i + 1))
@@ -95,6 +99,12 @@ def parse_axis(axis, chart_type: str):
     # 箱ひげ図
     # 数値軸の目盛が利用できない
     elif is_boxwhisker_chart(chart_type):
+        parse_axis_scale(data, axis, chart_type)
+        parse_axis_tick_label_format(data, axis, chart_type)
+
+    # ヒストグラム
+    # 軸のオプションが利用できない
+    elif is_histogram_chart(chart_type):
         parse_axis_scale(data, axis, chart_type)
         parse_axis_tick_label_format(data, axis, chart_type)
 
@@ -223,6 +233,10 @@ def is_scatter_chart(chart_type: str) -> bool:
 
 def is_boxwhisker_chart(chart_type: str) -> bool:
     return chart_type == constants.xlBoxwhisker
+
+
+def is_histogram_chart(chart_type: str) -> bool:
+    return chart_type == constants.xlHistogram
 
 
 def is_radar_chart(chart_type: str) -> bool:
