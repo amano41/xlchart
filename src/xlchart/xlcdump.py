@@ -3,9 +3,8 @@ import sys
 from os import PathLike
 from pathlib import Path
 
-import win32com.client.gencache
-
 from . import xlcparse
+from ._xlapp import _init_excel, _new_excel, _quit_excel
 
 
 def usage():
@@ -32,9 +31,10 @@ def main():
         return
 
     if target_path.is_dir():
+        _init_excel()
         xl = None
         try:
-            xl = win32com.client.gencache.EnsureDispatch("Excel.Application")
+            xl = _new_excel()
             for target_book in target_path.glob("*.xlsx"):
                 print(target_book, file=sys.stderr)
                 try:
@@ -51,8 +51,7 @@ def main():
             exit(1)
         finally:
             if xl is not None:
-                xl.Quit()
-                del xl
+                _quit_excel(xl)
         return
 
     print(f"Error: No such file or directory: {target_path}", file=sys.stderr)
@@ -60,16 +59,14 @@ def main():
 
 
 def dump(workbook_path: str | PathLike) -> dict:
+    _init_excel()
     xl = None
     try:
-        xl = win32com.client.gencache.EnsureDispatch("Excel.Application")
+        xl = _new_excel()
         return _dump(xl, workbook_path)
-    except Exception:
-        raise
     finally:
         if xl is not None:
-            xl.Quit()
-            del xl
+            _quit_excel(xl)
 
 
 def _dump(xl, workbook_path: str | PathLike) -> dict:
@@ -79,8 +76,6 @@ def _dump(xl, workbook_path: str | PathLike) -> dict:
         if wb is None:
             raise RuntimeError(f"Failed to open workbook: {workbook_path}")
         data = xlcparse.parse_book(wb)
-    except Exception:
-        raise
     finally:
         if wb is not None:
             wb.Close(SaveChanges=False)

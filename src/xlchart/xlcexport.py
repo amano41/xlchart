@@ -3,7 +3,7 @@ import sys
 from os import PathLike
 from pathlib import Path
 
-import win32com.client.gencache
+from ._xlapp import _init_excel, _new_excel, _quit_excel
 
 
 def usage():
@@ -40,44 +40,59 @@ def main():
 
 
 def export(workbook_path: str | PathLike, dest_path: str | PathLike):
+    _init_excel()
+    xl = None
+    try:
+        xl = _new_excel()
+        _export(xl, workbook_path, dest_path)
+    finally:
+        if xl is not None:
+            _quit_excel(xl)
+
+
+def _export(xl, workbook_path: str | PathLike, dest_path: str | PathLike):
 
     dest_dir = Path(dest_path)
     if dest_dir.exists() and not dest_dir.is_dir():
         print(f"Error: Not a directory: {dest_path}", file=sys.stderr)
         return
 
-    xl = win32com.client.gencache.EnsureDispatch("Excel.Application")
-    wb = xl.Workbooks.Open(Path(workbook_path).resolve())
+    wb = None
+    try:
+        wb = xl.Workbooks.Open(Path(workbook_path).resolve(), ReadOnly=True, UpdateLinks=False)
+        if wb is None:
+            raise RuntimeError(f"Failed to open workbook: {workbook_path}")
 
-    # ファイル名と同じ名前のディレクトリに出力する
-    dest_dir = dest_dir.joinpath(Path(workbook_path).stem)
-    if not dest_dir.exists():
-        dest_dir.mkdir()
+        # ファイル名と同じ名前のディレクトリに出力する
+        dest_dir = dest_dir.joinpath(Path(workbook_path).stem)
+        if not dest_dir.exists():
+            dest_dir.mkdir()
 
-    # 埋め込みグラフ
-    for sheet in wb.Worksheets:
-        for obj in sheet.ChartObjects():
-            name = escape_name(f"{sheet.Name}_{obj.Name}")
+        # 埋め込みグラフ
+        for sheet in wb.Worksheets:
+            for obj in sheet.ChartObjects():
+                name = _escape_name(f"{sheet.Name}_{obj.Name}")
+                dest_file = dest_dir.joinpath(f"{name}.png")
+                if dest_file.exists():
+                    print(f"Error: File already exists: {str(dest_file)}", file=sys.stderr)
+                    continue
+                obj.Chart.Export(dest_file)
+
+        # グラフシート
+        for chart in wb.Charts:
+            name = _escape_name(chart.Name)
             dest_file = dest_dir.joinpath(f"{name}.png")
             if dest_file.exists():
                 print(f"Error: File already exists: {str(dest_file)}", file=sys.stderr)
                 continue
-            obj.Chart.Export(dest_file)
-
-    # グラフシート
-    for chart in wb.Charts:
-        name = escape_name(chart.Name)
-        dest_file = dest_dir.joinpath(f"{name}.png")
-        if dest_file.exists():
-            print(f"Error: File already exists: {str(dest_file)}", file=sys.stderr)
-            continue
-        chart.Export(dest_file)
-
-    wb.Close(SaveChanges=False)
-    xl.Quit()
+            chart.Export(dest_file)
+    finally:
+        if wb is not None:
+            wb.Close(SaveChanges=False)
+            del wb
 
 
-def escape_name(name: str) -> str:
+def _escape_name(name: str) -> str:
 
     # 全角を半角に変換
     table = str.maketrans({chr(0xFF01 + i): chr(0x21 + i) for i in range(94)})
