@@ -180,8 +180,10 @@ def parse_series_by_group(group, group_number: int = 1):
 
     for s in group.SeriesCollection():
         data = parse_series(s)
-        data["overlap"] = group.Overlap
-        data["gap-width"] = group.GapWidth
+        # 縦棒グラフと横棒グラフの系列のオプション（系列の重なり，要素の間隔）
+        if is_column_chart(s.ChartType) or is_bar_chart(s.ChartType):
+            data["overlap"] = group.Overlap
+            data["gap-width"] = group.GapWidth
         data["chart-group"] = group_number
         series.append(data)
 
@@ -258,6 +260,26 @@ def parse_bin_by_group(group, group_number: int = 1):
     data["chart-group"] = group_number
 
     return data
+
+
+def is_column_chart(chart_type: str) -> bool:
+    return chart_type in (
+        # fmt: off
+        constants.xlColumnClustered,
+        constants.xlColumnStacked,
+        constants.xlColumnStacked100
+        # fmt: on
+    )
+
+
+def is_bar_chart(chart_type: str) -> bool:
+    return chart_type in (
+        # fmt: off
+        constants.xlBarClustered,
+        constants.xlBarStacked,
+        constants.xlBarStacked100
+        # fmt: on
+    )
 
 
 def is_scatter_chart(chart_type: str) -> bool:
