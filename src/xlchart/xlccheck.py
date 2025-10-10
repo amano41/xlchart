@@ -124,6 +124,12 @@ def check(target: dict, answer: dict) -> list[RESULT_TYPE]:
                 result.extend(check_series(target_list, answer_list, chart_name))
                 continue
 
+            if prop_name == "bins":
+                target_list = target_chart.get("bins", [])
+                answer_list = answer_chart.get("bins", [])
+                result.extend(check_bins(target_list, answer_list, chart_name))
+                continue
+
             # その他
             target_value = target_chart.get(prop_name, "")
             answer_value = answer_chart.get(prop_name, "")
@@ -192,6 +198,38 @@ def check_series(target_list: list[dict], answer_list: list[dict], chart_name: s
             if prop_name == "index":
                 continue
             label = f"series{index}.{prop_name}"
+            answer_value = answer.get(prop_name, "")
+            target_value = target.get(prop_name, "")
+            if isinstance(answer_value, Sequence):
+                correct = list(target_value) == list(answer_value)
+            else:
+                correct = target_value == answer_value
+            result.append((chart_name, label, target_value, correct))
+
+    return result
+
+
+def check_bins(target_list: list[dict], answer_list: list[dict], chart_name: str) -> list[RESULT_TYPE]:
+
+    result = []
+
+    for i, answer in enumerate(answer_list):
+
+        chart_group = answer.get("chart-group", i + 1)
+
+        # chart-group が一致する target を探す
+        for item in target_list:
+            if item.get("chart-group", -1) == chart_group:
+                target = item
+                break
+        else:
+            target = {}
+
+        # answer で指定されたプロパティについてチェック
+        for prop_name in answer:
+            if prop_name == "chart-group":
+                continue
+            label = f"bins{chart_group}.{prop_name}"
             answer_value = answer.get(prop_name, "")
             target_value = target.get(prop_name, "")
             if isinstance(answer_value, Sequence):
