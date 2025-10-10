@@ -249,8 +249,8 @@ def parse_bins_by_group(chart):
     for i, group in enumerate(chart.ChartGroups()):
         data = dict()
         data["bins-type"] = group.BinsType
-        data["bins-count"] = group.BinsCountValue
         data["bin-width"] = group.BinWidthValue
+        data["bins-count"] = group.BinsCountValue
         data["bins-overflow-enabled"] = group.BinsOverflowEnabled
         data["bins-overflow"] = group.BinsOverflowValue
         data["bins-underflow-enabled"] = group.BinsUnderflowEnabled
