@@ -166,8 +166,9 @@ def parse_axis_crosses(data, axis, chart_type: str):
 def parse_axis_display(data, axis, chart_type: str):
     # 散布図の X 軸は数値軸だが Type は xlCategory になっている
     if is_value_axis(axis) or is_scatter_chart(chart_type):
-        if axis.HasDisplayUnitLabel:
+        if not is_stacked100_chart(chart_type) and axis.HasDisplayUnitLabel:
             data["display-unit"] = axis.DisplayUnit
+            data["display-unit-label"] = axis.DisplayUnitLabel.Caption
         data["logarithmic"] = axis.ScaleType == constants.xlScaleLogarithmic
     data["reverse"] = axis.ReversePlotOrder
 
@@ -276,6 +277,18 @@ def is_bar_chart(chart_type: str) -> bool:
         constants.xlBarClustered,
         constants.xlBarStacked,
         constants.xlBarStacked100
+        # fmt: on
+    )
+
+
+def is_stacked100_chart(chart_type: str) -> bool:
+    return chart_type in (
+        # fmt: off
+        constants.xlColumnStacked100,
+        constants.xlBarStacked100,
+        constants.xlAreaStacked100,
+        constants.xlLineStacked100,
+        constants.xlLineMarkersStacked100
         # fmt: on
     )
 
