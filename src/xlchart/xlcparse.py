@@ -169,7 +169,11 @@ def parse_axis_display(data, axis, chart_type: str):
         if not is_stacked100_chart(chart_type) and axis.HasDisplayUnitLabel:
             data["display-unit"] = axis.DisplayUnit
             data["display-unit-label"] = axis.DisplayUnitLabel.Caption
-        data["logarithmic"] = axis.ScaleType == constants.xlScaleLogarithmic
+        if axis.ScaleType == constants.xlScaleLogarithmic:
+            data["logarithmic"] = True
+            data["log-base"] = axis.LogBase
+        else:
+            data["logarithmic"] = False
     data["reverse"] = axis.ReversePlotOrder
 
 
