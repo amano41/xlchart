@@ -109,6 +109,7 @@ def check(target: dict, answer: dict) -> list[RESULT_TYPE]:
 
         # プロパティごとにチェック
         for prop_name in answer_chart.keys():
+            print(prop_name)
 
             # Axis
             if prop_name == "axis":
@@ -197,6 +198,14 @@ def check_series(target_list: list[dict], answer_list: list[dict], chart_name: s
         for prop_name in answer:
             if prop_name == "index":
                 continue
+            # trendline はネストしているので別途チェック
+            if prop_name == "trendline":
+                target_trendlines = target.get("trendline", [])
+                answer_trendlines = answer.get("trendline", [])
+                for r in check_trendlines(target_trendlines, answer_trendlines):
+                    label = f"series{index}.trendline{r[0]}.{r[1]}"
+                    result.append((chart_name, label, r[2], r[3]))
+                continue
             label = f"series{index}.{prop_name}"
             answer_value = answer.get(prop_name, "")
             target_value = target.get(prop_name, "")
@@ -205,6 +214,25 @@ def check_series(target_list: list[dict], answer_list: list[dict], chart_name: s
             else:
                 correct = target_value == answer_value
             result.append((chart_name, label, target_value, correct))
+
+    return result
+
+
+def check_trendlines(target_list: list[dict], answer_list: list[dict]) -> list[RESULT_TYPE]:
+
+    result = []
+
+    for index, (target, answer) in enumerate(zip(target_list, answer_list)):
+
+        # answer で指定されたプロパティについてチェック
+        for prop_name in answer:
+            answer_value = answer.get(prop_name, "")
+            target_value = target.get(prop_name, "")
+            if isinstance(answer_value, Sequence):
+                correct = list(target_value) == list(answer_value)
+            else:
+                correct = target_value == answer_value
+            result.append((index, prop_name, target_value, correct))
 
     return result
 
