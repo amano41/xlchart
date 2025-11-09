@@ -17,7 +17,7 @@ def main():
 
     if len(sys.argv) != 2:
         usage()
-        exit()
+        sys.exit(1)
 
     target_path = Path(sys.argv[1]).resolve()
 
@@ -48,7 +48,7 @@ def main():
                     f.write("\n")
         except Exception as e:
             print(f"Error: {e}", file=sys.stderr)
-            exit(1)
+            sys.exit(1)
         finally:
             if xl is not None:
                 _quit_excel(xl)

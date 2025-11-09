@@ -16,7 +16,7 @@ def main():
 
     if len(sys.argv) < 2:
         usage()
-        exit()
+        sys.exit(1)
 
     target_path = Path(sys.argv[1]).resolve()
     if len(sys.argv) > 2:

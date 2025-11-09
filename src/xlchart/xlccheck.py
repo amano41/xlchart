@@ -24,7 +24,7 @@ def main():
 
     if len(sys.argv) != 3:
         usage()
-        exit()
+        sys.exit(1)
 
     target_path = Path(sys.argv[1])
     answer_path = Path(sys.argv[2])
