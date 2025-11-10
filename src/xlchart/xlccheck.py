@@ -5,9 +5,9 @@ from pathlib import Path
 from typing import Final, Sequence
 
 import tomli
-import win32com.client.gencache
 
 from . import xlcparse
+from ._xlapp import _init_excel, _new_excel, _quit_excel
 
 AXIS: Final[dict[int, str]] = {1: "x-axis", 2: "y-axis", 3: "series-axis"}
 
@@ -24,7 +24,7 @@ def main():
 
     if len(sys.argv) != 3:
         usage()
-        exit()
+        sys.exit(1)
 
     target_path = Path(sys.argv[1])
     answer_path = Path(sys.argv[2])
@@ -80,15 +80,27 @@ def load_answer(file_path: str | PathLike) -> dict:
 
 
 def load_target(file_path: str | PathLike) -> dict:
-    xl = win32com.client.gencache.EnsureDispatch("Excel.Application")
-    wb = xl.Workbooks.Open(Path(file_path).resolve())
+    _init_excel()
+    xl = None
     try:
-        data = xlcparse.parse_book(wb)
-    except Exception:
-        raise
+        xl = _new_excel()
+        return _load_target(xl, file_path)
     finally:
-        wb.Close(SaveChanges=False)
-        xl.Quit()
+        if xl is not None:
+            _quit_excel(xl)
+
+
+def _load_target(xl, file_path: str | PathLike) -> dict:
+    wb = None
+    try:
+        wb = xl.Workbooks.Open(Path(file_path).resolve(), ReadOnly=True, UpdateLinks=False)
+        if wb is None:
+            raise RuntimeError(f"Failed to open workbook: {file_path}")
+        data = xlcparse.parse_book(wb)
+    finally:
+        if wb is not None:
+            wb.Close(SaveChanges=False)
+            del wb
     return data
 
 
@@ -109,7 +121,6 @@ def check(target: dict, answer: dict) -> list[RESULT_TYPE]:
 
         # プロパティごとにチェック
         for prop_name in answer_chart.keys():
-            print(prop_name)
 
             # Axis
             if prop_name == "axis":
